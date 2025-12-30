@@ -31,7 +31,7 @@
 
   <h1>Hongguang Li (李宏广)</h1>
   <div class="meta">
-    Research: Large Language Model (LLM), Conversational AI, NLP
+    Research: Agentic AI Applicaiton;Large Language Model (LLM), Conversational AI, NLP
     <br/>
     <!-- 建议公开邮箱即可；手机号可注释掉，避免骚扰 -->
     Email: <a href="mailto:harvey2@mail.ustc.edu.cn">harvey2@mail.ustc.edu.cn</a>
@@ -80,18 +80,18 @@
     <summary>Qifu Technology | Senior Expert | QifuGPT-Chat (Sep 2025 – Now)</summary>
     <ul>
       <li>Project owner leading QifuGPT-Chat team; built post-training team 0→1 supporting consumer credit full-lifecycle conversational AI.</li>
-      <li>Built QifuGPT-Chat-SFT (0.6B & 14B) via multi-stage instruction tuning; optimized to QifuGPT-Chat-0.6B via online RL / on-policy distillation; achieved P99 latency 150ms with 300 input tokens and 30 output tokens (after acceleration).</li>
-      <li>Deployed to outbound collections: 65% win rate vs baseline; usable-response 80%→85% (+5%); recovery rate 87%→88% (+1%) in small A/B; estimated RMB 50M additional monthly revenue.</li>
+      <li>Built QifuGPT-Chat-SFT (14B) via multi-stage instruction tuning; optimized to QifuGPT-Chat-0.6B via on-policy distillation; achieved P99 latency 200ms with 300 input tokens and 30 output tokens (after vllm acceleration).</li>
+      <li>Deployed to outbound collections:  10%+ performance improvements vs online baseline; usable-response 77%→87% (+10%); recovery rate improvements in small A/B; estimated more than RMB 10M additional monthly revenue.</li>
     </ul>
   </details>
 
   <details>
     <summary>JF Smart Invest | Senior Manager, Expert | FinSphere Agent (Jul 2024 – Sep 2025)</summary>
     <ul>
-      <li>Adopted MTSearch-R1 framework with stages: &lt;think&gt; → &lt;plan&gt; → &lt;Tool Data&gt; → &lt;think&gt; → &lt;answer&gt;.</li>
-      <li>Two-stage training: DAG-SFT cold start + multi-reward RL (MR-GRPO) with chain order / tool format / tool naming rewards.</li>
-      <li>Inference: uncertainty-based DAG node scheduling + dynamic early-stopping for efficient retrieval.</li>
-      <li>Evaluation: automated pairwise competitions + satisfaction; 60% win vs Eastmoney LLM; 65% win vs iWencai; satisfaction 58%; outperformed ZeroSearch & Search-R1 on general QA benchmarks.</li>
+      <li>Adopted MetaSearch-RL framework with three stages: &lt;Policy Decomposition&gt; → &ltPredictive Search Planning&gt; → &lt;Episodic Memory&gt;.</li>
+      <li>Two-stage training: SFT cold start + multi-reward RL (MR-GRPO) with answer / tool format / tool naming rewards.</li>
+      <li>Inference: Lightweight Search Outcome Predictor + dynamic early-stopping(Information Gain Computation) for efficient search.</li>
+      <li>Evaluation: automated pairwise competitions + satisfaction; 60% win vs Eastmoney LLM; 65% win vs iWencai; satisfaction 58%; outperformed ZeroSearch & Search-R1&Router-R1 on general QA benchmarks.</li>
       <li><b>Report Agent:</b> Finsphere-Report-32B for weekly AI industry reports via RAG + real-time DB; 50k-token input → 5k-token report; 2000+ reports across 130+ industries.</li>
     </ul>
   </details>
