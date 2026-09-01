@@ -1,0 +1,774 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>hongguang-li ~ terminal</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,400;0,500;0,700;1,400&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --bg:        #fafafa;
+      --panel:     #ffffff;
+      --fg:        #18181b;
+      --muted:     #52525b;
+      --faint:     #a1a1aa;
+      --line:      #e4e4e7;
+      --accent:    #2563eb;
+      --accent-bg: #eff6ff;
+      --green:     #16a34a;
+      --amber:     #b45309;
+      --radius:    12px;
+      --mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+      --sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--fg);
+      font-family: var(--sans);
+      font-size: 15px;
+      line-height: 1.7;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; text-underline-offset: 3px; }
+    ::selection { background: var(--accent); color: #fff; }
+
+    /* ============ nav ============ */
+    .nav {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      background: rgba(250,250,250,0.92);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      border-bottom: 1px solid var(--line);
+    }
+    .nav .inner {
+      max-width: 880px;
+      margin: 0 auto;
+      padding: 0 24px;
+      display: flex;
+      align-items: center;
+      gap: 2px;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+    .nav .inner::-webkit-scrollbar { display: none; }
+    .nav a {
+      padding: 14px 12px;
+      color: var(--muted);
+      font-size: 13px;
+      white-space: nowrap;
+      border-bottom: 2px solid transparent;
+    }
+    .nav a:hover { color: var(--fg); text-decoration: none; }
+    .nav a.active { color: var(--accent); border-bottom-color: var(--accent); }
+    .nav a.nav-blog {
+      margin-left: auto;
+      font-family: var(--mono);
+      color: var(--accent);
+      font-weight: 500;
+    }
+    .nav a.nav-blog::after { content: " ↗"; font-size: 10px; color: var(--faint); }
+    .nav a.nav-blog:hover { border-bottom-color: var(--accent); }
+
+    .wrap {
+      max-width: 880px;
+      margin: 0 auto;
+      padding: 40px 24px 96px;
+    }
+
+    /* ============ hero ============ */
+    .hero {
+      display: grid;
+      grid-template-columns: 110px 1fr;
+      gap: 28px;
+      align-items: start;
+      padding: 32px;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+    .avatar {
+      width: 110px; height: 110px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid var(--line);
+      box-shadow: 0 0 0 4px var(--accent-bg);
+    }
+    .who { font-size: 26px; font-weight: 700; letter-spacing: -0.01em; margin: 0; }
+    .who .cn { color: var(--muted); font-weight: 600; }
+    .tag { color: var(--muted); font-size: 14px; margin: 6px 0 0; }
+
+    .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+    .chips span {
+      display: inline-block;
+      padding: 4px 10px;
+      font-size: 12px;
+      color: var(--accent);
+      background: var(--accent-bg);
+      border-radius: 20px;
+      white-space: nowrap;
+    }
+    .chips a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+    .chips a:hover { text-decoration: underline; }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-top: 20px;
+    }
+    .stat {
+      padding: 12px 8px;
+      text-align: center;
+      background: var(--bg);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+    }
+    .stat b { display: block; font-size: 20px; font-weight: 700; color: var(--fg); line-height: 1.2; }
+    .stat span { font-size: 12px; color: var(--muted); }
+
+    .links { margin-top: 18px; display: flex; flex-wrap: wrap; gap: 10px; }
+    .links a {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 7px 14px;
+      font-size: 13px;
+      color: var(--fg);
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      transition: border-color .15s ease, color .15s ease;
+    }
+    .links a:hover { border-color: var(--accent); color: var(--accent); text-decoration: none; }
+    .links svg { width: 15px; height: 15px; }
+
+    /* ============ sections ============ */
+    section { margin-top: 44px; scroll-margin-top: 64px; }
+
+    .sec-head {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin: 0 0 18px;
+      padding-bottom: 10px;
+      border-bottom: 2px solid var(--fg);
+    }
+    .sec-head .no {
+      font-family: var(--mono);
+      font-size: 13px;
+      color: var(--accent);
+      background: var(--accent-bg);
+      border-radius: 6px;
+      padding: 2px 8px;
+      white-space: nowrap;
+    }
+    .sec-head h2 { font-size: 19px; font-weight: 700; margin: 0; letter-spacing: -0.01em; }
+
+    p.para { margin: 0; color: var(--fg); max-width: 76ch; }
+
+    /* profile summary + timeline */
+    .summary {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    .summary .s-card {
+      flex: 1 1 200px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: var(--panel);
+      padding: 12px 16px;
+    }
+    .summary .s-card b {
+      display: block;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--fg);
+      margin-bottom: 4px;
+    }
+    .summary .s-card span {
+      font-size: 12.5px;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+    .timeline { margin-top: 4px; }
+    .tl-item {
+      position: relative;
+      padding: 0 0 18px 22px;
+    }
+    .tl-item:last-child { padding-bottom: 0; }
+    .tl-item::before {
+      content: "";
+      position: absolute;
+      left: 5px; top: 6px; bottom: 0;
+      width: 2px;
+      background: var(--line);
+    }
+    .tl-item:last-child::before { bottom: auto; height: 8px; }
+    .tl-item .t-dot {
+      position: absolute;
+      left: 0; top: 5px;
+      width: 12px; height: 12px;
+      border-radius: 50%;
+      background: var(--panel);
+      border: 3px solid var(--accent);
+    }
+    .tl-item.c2 .t-dot { border-color: var(--amber); }
+    .tl-item.c3 .t-dot { border-color: var(--green); }
+    .tl-item.c4 .t-dot { border-color: var(--magenta); }
+    .tl-item.c5 .t-dot { border-color: var(--cyan); }
+    .tl-item .t-period {
+      font-family: var(--mono);
+      font-size: 11.5px;
+      color: var(--amber);
+      font-weight: 500;
+    }
+    .tl-item .t-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--fg);
+      margin: 2px 0 0;
+    }
+    .tl-item .t-title .org { color: var(--accent); }
+    .tl-item .t-desc {
+      margin: 4px 0 0;
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+    .tl-item .t-desc b { color: var(--fg); font-weight: 600; }
+
+
+    /* achievements */
+    ul.tl { list-style: none; margin: 0; padding: 0; }
+    ul.tl li {
+      position: relative;
+      padding: 10px 0 10px 26px;
+      border-bottom: 1px solid var(--line);
+    }
+    ul.tl li:last-child { border-bottom: none; }
+    ul.tl li::before {
+      content: "";
+      position: absolute; left: 2px; top: 19px;
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--accent);
+    }
+    ul.tl li b { font-weight: 600; }
+    ul.tl li a { color: var(--accent); }
+
+    /* NVIDIA Agentic AI stack */
+        .stack {
+      margin-top: 16px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      align-items: start;
+    }
+    .stack .lay {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: var(--panel);
+      overflow: hidden;
+    }
+    .stack .lay-h {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 14px;
+      font-size: 10.5px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      background: var(--accent-bg);
+      border-bottom: 1px solid var(--line);
+    }
+    .stack .lay-h.m { background: #ecfdf5; }
+    .stack .lay-h .tag {
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 9.5px;
+      color: #fff;
+      background: var(--accent);
+    }
+    .stack .lay-h .tag.m { background: var(--green); }
+    .stack .lay-h span.lbl { color: var(--muted); letter-spacing: 0.04em; font-size: 11px; }
+    .stack .row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 6px 12px;
+    }
+    .stack .row + .row { border-top: 1px solid var(--line); }
+    .stack .row-label {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--fg);
+      width: 104px;
+      flex-shrink: 0;
+    }
+    .stack .row-label .dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--accent);
+      flex: none;
+    }
+    .stack .row-label.o .dot { background: var(--amber); }
+    .stack .row-label.e .dot { background: var(--green); }
+    .stack .row-label.t .dot { background: var(--cyan); }
+    .stack .row-label.i .dot { background: var(--magenta); }
+    .stack .row-label.r .dot { background: var(--red); }
+    .stack .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .stack .chip {
+      padding: 3px 9px;
+      font-size: 11.5px;
+      color: var(--fg);
+      background: var(--bg);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      transition: border-color .15s ease, color .15s ease;
+    }
+    .stack a.chip {
+      text-decoration: none;
+      transition: border-color .15s ease, color .15s ease;
+    }
+    .stack a.chip:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+    .stack .chip .git {
+      margin-left: 3px;
+      font-size: 9px;
+      color: var(--faint);
+    }
+
+/* rows (experience / education / patents) */
+    .rows { border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
+    .rows .r {
+      display: grid;
+      grid-template-columns: 160px 1fr;
+      gap: 0;
+      border-bottom: 1px solid var(--line);
+    }
+    .rows .r:last-child { border-bottom: none; }
+    .rows .t {
+      padding: 13px 18px;
+      color: var(--amber);
+      font-family: var(--mono);
+      font-size: 12.5px;
+      border-right: 1px solid var(--line);
+      background: var(--panel);
+      white-space: nowrap;
+    }
+    .rows .c { padding: 13px 18px; font-size: 14px; }
+    .rows .c .logo {
+      width: 22px; height: 22px;
+      border-radius: 5px;
+      border: 1px solid var(--line);
+      background: #fff;
+      object-fit: contain;
+      vertical-align: -5px;
+      margin-right: 8px;
+    }
+    .rows .c .org { font-weight: 600; }
+    .rows .c .sub { color: var(--muted); font-size: 13px; }
+    .rows .c a { color: var(--accent); }
+
+    .zh {
+      color: var(--muted);
+      font-weight: 400;
+      font-size: 13px;
+      margin-left: 2px;
+    }
+    .nowrap { white-space: nowrap; }
+
+    /* publications */
+    .pubs { counter-reset: pub; }
+    .pubs .pub {
+      display: grid;
+      grid-template-columns: 34px 1fr;
+      gap: 14px;
+      padding: 13px 0;
+      border-bottom: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 13.5px;
+      line-height: 1.65;
+    }
+    .pubs .pub:last-child { border-bottom: none; }
+    .pubs .pub::before {
+      counter-increment: pub;
+      content: "[" counter(pub) "]";
+      color: var(--faint);
+      font-family: var(--mono);
+      font-size: 12px;
+      padding-top: 2px;
+    }
+    .pubs .pub b { color: var(--fg); font-weight: 600; }
+    .pubs .pub i { font-style: italic; }
+    .pubs .pub a.doi { color: var(--accent); }
+
+    .conf {
+      font-family: var(--mono);
+      font-weight: 700;
+      font-size: 12px;
+      color: var(--accent);
+      background: var(--accent-bg);
+      border: 1px solid #bfdbfe;
+      border-radius: 5px;
+      padding: 1px 6px;
+      white-space: nowrap;
+      letter-spacing: 0.02em;
+    }
+
+    .oral {
+      color: #dc2626;
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      border-radius: 4px;
+      padding: 0 5px;
+      font-size: 10.5px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    /* footer */
+    .foot {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 32px;
+    }
+    .foot .body { color: var(--muted); font-size: 13.5px; }
+    .foot .body strong { color: var(--fg); }
+    .foot ul.tl li { font-size: 13.5px; }
+
+    .prompt-end {
+      margin-top: 48px;
+      color: var(--faint);
+      font-family: var(--mono);
+      font-size: 12px;
+    }
+
+    @media (max-width: 720px) {
+      .wrap { padding: 28px 16px 64px; }
+      .hero { grid-template-columns: 1fr; gap: 16px; padding: 24px 20px; }
+      .avatar { width: 88px; height: 88px; }
+      .who { font-size: 22px; }
+      .stats { grid-template-columns: repeat(2, 1fr); }
+      .rows .r { grid-template-columns: 1fr; }
+      .rows .t { border-right: none; border-bottom: 1px solid var(--line); }
+      .stack { grid-template-columns: 1fr; }
+      .foot { grid-template-columns: 1fr; gap: 24px; }
+    }
+  </style>
+</head>
+
+<body>
+
+  <nav class="nav">
+    <div class="inner">
+      <a href="#profile" data-target="profile">Profile</a>
+      <a href="#achievements" data-target="achievements">Achievements</a>
+      <a href="#experience" data-target="experience">Experience</a>
+      <a href="#education" data-target="education">Education</a>
+      <a href="#publications" data-target="publications">Publications</a>
+      <a href="#patents" data-target="patents">Patents</a>
+      <a href="#service" data-target="service">Service</a>
+      <a href="#awards" data-target="awards">Awards</a>
+      <a href="blog/" class="nav-blog">Blog</a>
+    </div>
+  </nav>
+
+<div class="wrap">
+
+  <!-- HERO -->
+  <header class="hero">
+    <img class="avatar" src="assets/avatar.jpg" alt="Harvey Li" />
+    <div>
+      <h1 class="who">Harvey Li <span class="cn">· 李宏广</span></h1>
+      <p class="tag">Senior Developer Relation Manager @ NVIDIA <span class="zh">· 高级开发者关系技术经理</span></p>
+      <div class="chips">
+        <span>Agentic AI</span>
+        <span>LLM</span>
+        <span>Conversational AI</span>
+        <span>NLP</span>
+        <span>CIPS LLM Special Committee</span>
+      </div>
+      <div class="stats">
+        <div class="stat"><b>12</b><span>Papers</span></div>
+        <div class="stat"><b>200+</b><span>Citations</span></div>
+        <div class="stat"><b>7</b><span>Patents</span></div>
+        <div class="stat"><b>7+</b><span>Years</span></div>
+      </div>
+      <div class="links">
+        <a href="mailto:harvey2@mail.ustc.edu.cn">
+          <svg style="color:#2563eb" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M0 4a2 2 0 012-2h12a2 2 0 012 2v8a2 2 0 01-2 2H2a2 2 0 01-2-2V4zm2.9.87L8 9.1l5.1-4.23a.75.75 0 00-.94-1.16L8 6.9 2.84 3.71a.75.75 0 10-.94 1.16z"/></svg>
+          Email
+        </a>
+        <a href="https://github.com/HongguangLi" target="_blank" rel="noopener">
+          <svg style="color:#181717" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+          GitHub
+        </a>
+        <a href="https://scholar.google.com/citations?user=p815znEAAAAJ&hl=en" target="_blank" rel="noopener">
+          <svg style="color:#4285F4" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M9.41.97a2 2 0 011.84 0l3.18 1.83a1 1 0 010 1.74L11.25 6.4l3.18 1.83a1 1 0 010 1.74l-3.18 1.83a2 2 0 01-2.85-.88L6 5.66l2.56-4.69zM6 6.3v8.52a1 1 0 01-2 0V6.3a1 1 0 012 0zm-3 8.52V9.5h2v5.32a1 1 0 01-2 0z"/></svg>
+          Scholar
+        </a>
+        <a href="https://x.com/Harvey1512276/highlights" target="_blank" rel="noopener">
+          <svg style="color:#000000" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M12.6.75h2.45l-5.36 6.14L16 15.25h-4.94L7.44 10.2l-3.83 5.05H1.16l5.73-6.56L0 .75h5.06l3.46 4.59L12.6.75zm-.86 13.03h1.36L4.32 2.13H2.85l8.89 11.65z"/></svg>
+          X
+        </a>
+        <a href="https://weibo.com/3194789262" target="_blank" rel="noopener">
+          <svg style="color:#E6162D" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M10.36 17.05c-3.87.44-6.98-1.35-6.94-3.99.04-2.64 3.21-5.18 7.08-5.61 3.87-.44 6.98 1.34 6.94 3.99-.04 2.64-3.21 5.17-7.08 5.61zM5.45 13.05c.17 1.34 2.28 2.39 4.7 2.34 2.43-.05 4.27-1.19 4.1-2.54-.17-1.34-2.28-2.38-4.7-2.34-2.43.06-4.27 1.2-4.1 2.54zm2.1.2c.13.3.78.45 1.43.34.66-.11 1.08-.45.95-.75-.13-.3-.78-.44-1.43-.34-.66.11-1.08.45-.95.75zm3.2 1.6c.76-.13 1.28-.57 1.16-.98-.13-.41-.81-.63-1.57-.5-.76.13-1.28.57-1.16.98.13.4.81.63 1.57.5z"/><path d="M14.94 12.92c.34-.06.59-.27.53-.47-.06-.2-.34-.31-.68-.25-.34.06-.59.27-.53.47.06.2.34.31.68.25zm-1.09-2.08c.66-.11 1.1-.5.98-.86-.13-.37-.72-.57-1.38-.46-.66.11-1.1.5-.98.86.13.36.72.57 1.38.46z"/><path d="M20.5 12.8c.62-.6.58-1.18-.1-1.6-.55-.33-1.33-.42-2.3-.32.13-.62.04-1.16-.26-1.6-.32-.48-.82-.7-1.5-.68-.06 0-.1.02-.14.05 1.03-.9 1.1-1.76.2-2.58-.72-.65-1.8-.92-3.25-.8 1.06-1.6.98-2.9-.22-3.9-.76-.63-1.9-.94-3.42-.94-.66.02-1.3.1-1.93.23l-.12.03c.7.26 1.3.6 1.76 1 .5.47.76 1.02.76 1.63 0 .4-.12.78-.36 1.12-.24.34-.55.6-.94.78-.38.18-.8.28-1.26.3l-.04.72c1.54.4 2.94.5 4.16.3-.15.7-.2 1.4-.13 2.1-1.08-.04-2.06-.14-2.92-.3-.22 2.7 2.3 4.96 5.4 4.78 2.98-.18 5.34-1.92 5.73-4.3.1.1.2.18.31.25.85.53.9 1.05.17 1.6-.56.42-1.4.63-2.4.6 2.16.13 3.7-.18 4.3-.92l.05-.06.03.03z"/></svg>
+          微博
+        </a>
+        <a href="#" class="wechat-link">
+          <svg style="color:#07C160" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M6.6 1C3.5 1 1 3.1 1 5.7c0 1.5.8 2.8 2 3.6l-.5 1.6L4.3 9.8c.7.2 1.4.3 2.3.3h.4c-.1-.4-.2-.8-.2-1.2 0-2.6 2.5-4.7 5.5-4.7h.6C12.5 2.1 9.8 1 6.6 1zM5 4.2c.4 0 .8.3.8.8S5.5 5.8 5 5.8 4.2 5.5 4.2 5s.4-.8.8-.8zm4.8 0c.5 0 .8.3.8.8s-.4.8-.8.8-.8-.3-.8-.8.3-.8.8-.8z"/><path d="M16 10.3c0-2.1-2.1-3.8-4.7-3.8S6.6 8.2 6.6 10.3s2.1 3.8 4.7 3.8c.6 0 1.1-.1 1.6-.2l1.4.8-.5-1.4c1.4-.8 2.2-1.9 2.2-3zM9.7 8.9c.3 0 .6.3.6.6s-.3.6-.6.6-.6-.3-.6-.6.2-.6.6-.6zm2.6 0c.3 0 .6.3.6.6s-.3.6-.6.6-.6-.3-.6-.6.2-.6.6-.6z"/></svg>
+          WeChat
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- 01 PROFILE -->
+  <section id="profile">
+    <div class="sec-head"><span class="no">01</span><h2>Profile</h2></div>
+    <p class="para">
+      I drive <b>Agentic AI ecosystem &amp; technology partnerships at NVIDIA</b> — helping partners build, observe, and evaluate agents on NVIDIA's stack. Before that I built and headed LLM teams at Qifu Technology and JF SmartInvest — where financial agents consumed <b>600B+ tokens</b> — and shipped conversational AI serving <b>650M+ users globally</b> at Microsoft Xiaoice. Backed by <b>10+ papers at top NLP venues</b>, <b>7 granted invention patents</b>, and the CIPS LLM Special Committee.
+    </p>
+  </section>
+
+  <!-- 02 HIGHLIGHTS -->
+  <section id="achievements">
+    <div class="sec-head"><span class="no">02</span><h2>Key Project Achievements</h2></div>
+    <ul class="tl">
+      <li><b>NVIDIA – Agentic AI PIC In China:</b> PIC of enterprise-grade Agentic AI solutions in China, with partners including Dify, LangChain Community, MemTensor, Oceabase, Red Hat, Nextie, Hand, iSoftStone, and AsiaInfo.
+        <div class="stack">
+          <div class="lay">
+            <div class="lay-h"><span class="tag">Agent</span><span class="lbl">Application Layer</span></div>
+            <div class="row">
+              <div class="row-label"><span class="dot"></span>Agent Build</div>
+              <div class="chips">
+                <a class="chip" href="https://github.com/NVIDIA/NemoClaw" target="_blank" rel="noopener">NeMoClaw<span class="git">↗</span></a>
+                <a class="chip" href="https://github.com/NVIDIA/OpenShell" target="_blank" rel="noopener">OpenShell<span class="git">↗</span></a>
+                <a class="chip" href="https://github.com/NVIDIA/SkillSpector" target="_blank" rel="noopener">Skillspector<span class="git">↗</span></a>
+              </div>
+            </div>
+            <div class="row">
+              <div class="row-label o"><span class="dot"></span>Agent Observation</div>
+              <div class="chips">
+                <a class="chip" href="https://github.com/NVIDIA/NeMo-Relay" target="_blank" rel="noopener">NeMo Relay<span class="git">↗</span></a>
+                <a class="chip" href="https://github.com/HongguangLi/agenttap" target="_blank" rel="noopener">AgentTap<span class="git">↗</span></a>
+              </div>
+            </div>
+            <div class="row">
+              <div class="row-label e"><span class="dot"></span>Agent Evaluation</div>
+              <div class="chips">
+                <a class="chip" href="https://github.com/NVIDIA-NeMo/gym" target="_blank" rel="noopener">NeMo Gym<span class="git">↗</span></a>
+              </div>
+            </div>
+          </div>
+          <div class="lay">
+            <div class="lay-h"><span class="tag m">Model</span><span class="lbl">Model Layer · Foundation</span></div>
+            <div class="row">
+              <div class="row-label t"><span class="dot"></span>Training</div>
+              <div class="chips">
+                <a class="chip" href="https://github.com/NVIDIA-NeMo/Automodel" target="_blank" rel="noopener">NeMo AutoModel<span class="git">↗</span></a>
+                <a class="chip" href="https://github.com/NVIDIA-NeMo/RL" target="_blank" rel="noopener">NeMo RL<span class="git">↗</span></a>
+              </div>
+            </div>
+            <div class="row">
+              <div class="row-label i"><span class="dot"></span>Inference</div>
+              <div class="chips">
+                <a class="chip" href="https://github.com/ai-dynamo/dynamo" target="_blank" rel="noopener">Dynamo<span class="git">↗</span></a>
+              </div>
+            </div>
+            <div class="row">
+              <div class="row-label r"><span class="dot"></span>Retrieval</div>
+              <div class="chips">
+                <a class="chip" href="https://cgc.chancloud.com/container/bge-m3" target="_blank" rel="noopener">BGE-M3<span class="git">↗</span></a>
+                <a class="chip" href="https://cgc.chancloud.com/container/bge-reranker-v2-m3" target="_blank" rel="noopener">BGE Reranker v2 M3<span class="git">↗</span></a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </li>
+      <li><b>Qifu Technology – QifuGPT-Chat:</b> Delivered product-level financial LLM in collections QifuGPT-Chat (0.6B~14B) with SFT and On-Policy Distillation with 10%+ performance improvements (77% → 89%) vs online baseline.</li>
+      <li><b>JF SmartInvest – FinSphere:</b> Built Meta learning RL-based investment advisory agent <a href="https://jzai.techgp.cn/jzdmx-beat/#/chat" target="_blank">FinSphere（九方灵犀）</a> in 2025; surpassed major players (e.g., 60% win rate vs East Money agent（东方财富-妙想）; 65% win rate vs iWencai（同花顺-问财）).</li>
+      <li><b>Microsoft Xiaoice – COMEDY / XiaobingKnows:</b> Built COMEDY from 0→1 in 2023, a memory-enhanced conversational system, co-developed with HKUST(GZ) and launched on the XEVA platform and Xiaoice Island（小冰岛）; Also delivered XiaobingKnows（小冰知道） in 2021, an open-domain QA system using only online search, before ChatGPT's public release.</li>
+      <li><b>Huawei – Auto Assistant:</b> Core member to the delivery of Huawei's first-generation in-car assistant（车载小艺） in 2020, deployed across X-Project (AITO/问界), C-Project (AVATR/阿维塔), and B-Project (BAIC/北汽).</li>
+    </ul>
+
+    <div class="sec-head" style="margin-top:34px;"><span class="no">02b</span><h2>Key Research Achievements</h2></div>
+    <ul class="tl">
+      <li><b>FinSphere &amp; FinSearch:</b> (IJCAI 2025 Workshop <span class="oral">Oral</span>, ACM ICAIF 2025): financial agent (co-developed with HKUST <a href="https://github.com/KirkHan0920" target="_blank">Shijie Han</a>) &amp; financial search agent (co-developed with Johns Hopkins <a href="https://scholar.google.com/citations?user=YDlF4lQAAAAJ&hl=zh-CN" target="_blank">Yiqing Shen</a>).</li>
+      <li><b>COMEDY:</b> (COLING 2025 <span class="oral">Oral</span>, Top 5%): Open-domain compressive memory-enhanced long-term conversational system, co-developed with HKUST(GZ) <a href="https://jerrynchen.github.io/" target="_blank">Nuo Chen</a>.</li>
+      <li><b>Orca:</b> (EMNLP 2023): First Chinese conversational MRC dataset.</li>
+      <li><b>Penguin:</b> (EMNLP 2023): Largest Chinese generative MRC dataset.</li>
+      <li><b>LAUG:</b> (ACL 2021): Robustness evaluation for task-oriented dialogue, co-developed with <a href="https://coai.cs.tsinghua.edu.cn/hml" target="_blank">Minlie Huang</a>, Chief Scientist of Lingxin Intelligent (AI Beings).</li>
+    </ul>
+  </section>
+
+  <!-- 03 EXPERIENCE -->
+  <section id="experience">
+    <div class="sec-head"><span class="no">03</span><h2>Work Experience</h2></div>
+    <div class="rows">
+      <div class="r"><div class="t">2026.01 → now</div><div class="c"><img class="logo" src="assets/logos/nvidia.png" alt="NVIDIA"/><span class="org">NVIDIA</span> — Sr. Dev Rel Manager, Agentic AI <span class="sub">· NemoClaw, AI-Q 2.0 · Advisor: <a href="https://baike.baidu.com/item/%E5%BC%A0%E7%91%9E%E5%8D%8E/50884961" target="_blank">Rita</a></span></div></div>
+      <div class="r"><div class="t">2025.09 → 2026.01</div><div class="c"><img class="logo" src="assets/logos/qifu.png" alt="Qifu Technology"/><span class="org">Qifu Technology</span> — Senior Expert, Head of QifuGPT-Chat Team <span class="sub">· Advisor: <a href="https://www.linkedin.com/in/%E9%9D%92-%E6%9D%A8-9565a1181/?originalSubdomain=cn" target="_blank">QingYang, Chief AI Officer</a></span></div></div>
+      <div class="r"><div class="t">2024.07 → 2025.09</div><div class="c"><img class="logo" src="assets/logos/jfzn.png" alt="JF Smart Invest"/><span class="org">JF Smart Invest (9636.HK)</span> — Senior Manager, Head of LLM Team <span class="sub">· Advisor: <a href="https://baike.baidu.com/item/%E9%99%88%E6%96%87%E5%BD%AC/20181879" target="_blank">Wenbing Chen, Chairman &amp; CEO</a></span></div></div>
+      <div class="r"><div class="t">2021.07 → 2024.07</div><div class="c"><img class="logo" src="assets/logos/xiaoice.png" alt="Microsoft Xiaoice"/><span class="org">Microsoft Xiaoice</span> — Applied Scientist <span class="sub">· Xiaoice · Advisor: <a href="https://sites.google.com/site/zjuwby/" target="_blank">Baoyuan Wang, Vice President</a></span></div></div>
+      <div class="r"><div class="t">2019.07 → 2021.07</div><div class="c"><img class="logo" src="assets/logos/huawei.png" alt="Huawei"/><span class="org">Huawei</span> — NLP Engineer <span class="sub">· Huawei Assistant · Advisor: Yi Gao, Expert</span></div></div>
+    </div>
+  </section>
+
+  <!-- 04 EDUCATION -->
+  <section id="education">
+    <div class="sec-head"><span class="no">04</span><h2>Education</h2></div>
+    <div class="rows">
+      <div class="r"><div class="t">2016 → 2019</div><div class="c"><span class="org">USTC (985)</span> — M.Eng. in Automation <span class="sub">· University of Science and Technology of China · Advisor: <a href="https://iatyz.ustc.edu.cn/teacher/profile/name/%E6%9D%8E%E4%BF%8A" target="_blank">Jun Li, Associate Professor</a></span></div></div>
+      <div class="r"><div class="t">2012 → 2016</div><div class="c"><span class="org">DHU (211)</span> — B.Eng. in Automation <span class="sub">· Donghua University · Advisor: <a href="https://siis.dhu.edu.cn/2020/0706/c24724a366564/page.htm" target="_blank">Wujun Xu, Associate Professor</a></span></div></div>
+    </div>
+  </section>
+
+  <!-- 05 PUBLICATIONS -->
+  <section id="publications">
+    <div class="sec-head"><span class="no">05</span><h2>Publications</h2></div>
+    <div class="pubs">
+      <div class="pub"><div>Yiqing Shen, Jingshu Zhang, Feng Chen, Kaiyuan Yan, <b>Hongguang Li</b>. <i>FinSearch: A Temporal-Aware Search Agent Framework for Real-Time Financial Information Retrieval with LLMs.</i> ACM <span class="conf">ICAIF 2025</span> (ACM International Conference on AI in Finance), Corresponding. <a class="doi" href="https://doi.org/10.1145/3768292.3770382">[DOI]</a></div></div>
+      <div class="pub"><div>Shijie Han, Jinshu Zhang, YiQing Sheng, Kaiyuan Yang, <b>Hongguang Li</b>. <i>FinSphere, a Real-Time Stock Analysis Agent Powered by Instruction-Tuned LLMs and Domain Tools.</i> <span class="conf">IJCAI 2025</span> Workshop (International Joint Conference on Artificial Intelligence · FinLLM 2025), <span class="oral">Oral</span>, Corresponding. <a class="doi" href="https://finllm.github.io/workshop/#/fcb2025">[DOI]</a></div></div>
+      <div class="pub"><div>Changhai Zhou, Shijie Han, Lining Yang, Yuhua Zhou, Xu Cheng, Yibin Wang, <b>Hongguang Li</b>. <i>RankAdaptor: Hierarchical Rank Allocation for Efficient Fine-Tuning Pruned LLMs via Performance Model.</i> <span class="conf">NAACL 2025</span> (Findings of the North American Chapter of the Association for Computational Linguistics), 5781-5795, Corresponding. <a class="doi" href="https://aclanthology.org/2025.findings-naacl.321/">[DOI]</a></div></div>
+      <div class="pub"><div>Changhai Zhou, Yuhua Zhou, Yibin Wang, Shijie Han, Qian Qiao, <b>Hongguang Li</b>. <i>QPruner: Probabilistic Decision Quantization for Structured Pruning in Large Language Models.</i> <span class="conf">NAACL 2025</span> (Findings of the North American Chapter of the Association for Computational Linguistics), 4276-4286, Corresponding. <a class="doi" href="https://aclanthology.org/2025.findings-naacl.240/">[DOI]</a></div></div>
+      <div class="pub"><div>Nuo Chen, <b>Hongguang Li</b>, Jianhui Chang, Juhua Huang, Baoyuan Wang, Jia Li. <i>Compress to Impress: Unleashing the Potential of Compressive Memory in Real-World Long-Term Conversations.</i> <span class="conf">COLING 2025</span> (International Conference on Computational Linguistics), 755-773, <span class="oral">Oral</span> (Top 5%). <a class="doi" href="https://aclanthology.org/2025.coling-main.51/">[DOI]</a></div></div>
+      <div class="pub"><div>Nuo Chen, <b>Hongguang Li</b>, Baoyuan Wang, Jia Li. <i>From Good to Great: Improving Math Reasoning with Tool-Augmented Interleaf Prompting.</i> <span class="conf">ACL 2024</span> Workshop (Annual Meeting of the Association for Computational Linguistics · NLRSE). <a class="doi" href="https://aclanthology.org/2024.nlrse-1.7/">[DOI]</a></div></div>
+      <div class="pub"><div>Nuo Chen, <b>Hongguang Li</b>, Junqing He, Yinan Bao, Xinshi Lin, Qi Yang, Jianfeng Liu, Ruyi Gan, Jiaxing Zhang, Baoyuan Wang, Jia Li. <i>Orca: A Few-shot Benchmark for Chinese Conversational MRC.</i> <span class="conf">EMNLP 2023</span> (Findings of the Conference on Empirical Methods in Natural Language Processing), 15685-15699. <a class="doi" href="https://aclanthology.org/2023.findings-emnlp.1050/">[DOI]</a></div></div>
+      <div class="pub"><div>Nuo Chen, <b>Hongguang Li</b>, Yinan Bao, Baoyuan Wang, Jia Li. <i>Natural Response Generation for Chinese Reading Comprehension.</i> <span class="conf">EMNLP 2023</span> (Findings of the Conference on Empirical Methods in Natural Language Processing), 11068-11081. <a class="doi" href="https://aclanthology.org/2023.findings-emnlp.739/">[DOI]</a></div></div>
+      <div class="pub"><div>Jiexi Liu, Ryuichi Takanobu, Jiaxin Wen, Dazhen Wan, <b>Hongguang Li</b>, Weiran Nie, Cheng Li, Wei Peng, Minlie Huang. <i>Robustness Testing of Language Understanding in Task-Oriented Dialog.</i> <span class="conf">ACL 2021</span> (Annual Meeting of the Association for Computational Linguistics), 2467-2480. <a class="doi" href="https://aclanthology.org/2021.acl-long.192/">[DOI]</a></div></div>
+      <div class="pub"><div>Guangquan Yuan, Jun Li, <b>Hongguang Li</b>, Yi Du, Yong Li, Alan Yu. <i>Label-Embedding-Based Multi-Core Convolution for Text Categorization.</i> <span class="conf">ICACI 2020</span> (International Conference on Advanced Computational Intelligence).</div></div>
+      <div class="pub"><div>Yang Li, <b>Hongguang Li</b>, Jun Li, Ning Zhang, Guangquan Yuan. <i>A Deep Semantic Matching Network for Answer Selection.</i> <span class="conf">CCC 2019</span> (Chinese Control Conference), 8683-8688.</div></div>
+      <div class="pub"><div><b>Hongguang Li</b>, Jun Li, Wei Tian. <i>A Deep Multiple View Sentence Representation Model for Question Answering.</i> 37th <span class="conf">CCC 2018</span> (Chinese Control Conference), 9456-9460.</div></div>
+    </div>
+  </section>
+
+  <!-- 06 PATENTS -->
+  <section id="patents">
+    <div class="sec-head"><span class="no">06</span><h2>Patents (Authorized) <span class="zh">· 发明专利已授权</span></h2></div>
+    <div class="rows">
+      <div class="r"><div class="t">CN120030278A · 2025</div><div class="c">Method and System for Constructing Large Models in the Securities Domain.</div></div>
+      <div class="r"><div class="t">CN118153687A · 2024</div><div class="c">Memory-Enhanced Response in Dialogue Systems.</div></div>
+      <div class="r"><div class="t">CN117290468B · 2024</div><div class="c">Intelligent Dialogue Method, Device, and Storage Medium.</div></div>
+      <div class="r"><div class="t">CN115617974A · 2023</div><div class="c">Dialogue Processing Method, Device, Equipment, and Storage Medium.</div></div>
+      <div class="r"><div class="t">CN115062620A · 2022</div><div class="c">Semantic Understanding Method and Device.</div></div>
+      <div class="r"><div class="t">CN110134964A · 2019</div><div class="c">Text Matching Method Based on Hierarchical CNN and Attention.</div></div>
+      <div class="r"><div class="t">CN105749438A · 2016</div><div class="c">Personal Escape Assistance Device with Embedded Fire Blanket.</div></div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <section id="service">
+    <div class="sec-head"><span class="no">07</span><h2>Academic Service</h2></div>
+    <div class="body">
+      <strong>Journal Reviewer</strong><br/>
+      Knowledge-Based Systems (CAS Tier 1; IF: 8.8)<br/>
+      Journal of Building Engineering (CAS Tier 1; IF: 6.4)<br/><br/>
+      <strong>Conference Reviewer</strong>
+      <div class="chips" style="margin-top:10px">
+        <span>EMNLP 2023~2025</span>
+        <span>AAAI 2024~2025</span>
+        <span>ARR 2024~2026</span>
+        <span>ACL 2025~2026</span>
+        <span>ICLR 2025~2026</span>
+        <span>MM 2025~2026</span>
+        <span>NeurIPS 2026</span>
+      </div>
+    </div>
+  </section>
+
+  <section id="awards">
+    <div class="sec-head"><span class="no">08</span><h2>Awards</h2></div>
+    <ul class="tl">
+      <li>Shanghai Scholarship (2014) <span class="zh">· 上海市奖学金</span></li>
+      <li>Shanghai Outstanding Graduates (2016) <span class="zh">· 上海市优秀毕业生</span></li>
+      <li class="nowrap">First Class Scholarship of USTC (2017-2019) <span class="zh">· 中国科学技术大学一等奖学金</span></li>
+    </ul>
+  </section>
+
+  <p class="prompt-end"># last updated: 2026</p>
+
+</div>
+
+<script>
+  (function () {
+    var wechat = document.querySelector('.wechat-link');
+    if (wechat) {
+      wechat.addEventListener('click', function (e) {
+        e.preventDefault();
+        var text = '18817828205';
+        function done() {
+          var old = wechat.textContent;
+          wechat.textContent = 'WeChat: 已复制 18817828205';
+          setTimeout(function () { wechat.textContent = old; }, 1800);
+        }
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(text).then(done, done);
+        } else {
+          var ta = document.createElement('textarea');
+          ta.value = text;
+          document.body.appendChild(ta);
+          ta.select();
+          try { document.execCommand('copy'); } catch (e) {}
+          document.body.removeChild(ta);
+          done();
+        }
+      });
+    }
+  })();
+</script>
+
+<script>
+  (function () {
+    var links = Array.prototype.slice.call(document.querySelectorAll('.nav a'));
+    var targets = links.map(function (a) { return document.getElementById(a.dataset.target); }).filter(Boolean);
+
+    var setActive = function (id) {
+      links.forEach(function (a) {
+        a.classList.toggle('active', a.dataset.target === id);
+      });
+    };
+
+    var onScroll = function () {
+      var pos = window.scrollY + 120;
+      var current = null;
+      for (var i = 0; i < targets.length; i++) {
+        if (targets[i].offsetTop <= pos) current = targets[i].id;
+      }
+      if (current) setActive(current);
+    };
+
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+  })();
+</script>
+</body>
+</html>

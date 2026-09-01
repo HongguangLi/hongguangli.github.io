@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Blog · hongguang-li ~ terminal</title>
+  <meta name="description" content="Writing by Harvey Li (李宏广) on Agentic AI — agent observability, evaluation, and the NVIDIA agent stack."/>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,400;0,500;0,700;1,400&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --bg:        #fafafa;
+      --panel:     #ffffff;
+      --fg:        #18181b;
+      --muted:     #52525b;
+      --faint:     #a1a1aa;
+      --line:      #e4e4e7;
+      --accent:    #2563eb;
+      --accent-bg: #eff6ff;
+      --green:     #16a34a;
+      --amber:     #b45309;
+      --radius:    12px;
+      --mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+      --sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--fg);
+      font-family: var(--sans);
+      font-size: 15px;
+      line-height: 1.7;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; text-underline-offset: 3px; }
+    ::selection { background: var(--accent); color: #fff; }
+
+    .nav {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      background: rgba(250,250,250,0.92);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      border-bottom: 1px solid var(--line);
+    }
+    .nav .inner {
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 0 24px;
+      display: flex;
+      align-items: center;
+      gap: 2px;
+    }
+    .nav .brand {
+      font-family: var(--mono);
+      font-size: 13px;
+      color: var(--fg);
+      font-weight: 700;
+      padding: 14px 12px 14px 0;
+      margin-right: auto;
+    }
+    .nav .brand:hover { text-decoration: none; color: var(--accent); }
+    .nav a.item {
+      padding: 14px 12px;
+      color: var(--muted);
+      font-size: 13px;
+      white-space: nowrap;
+      border-bottom: 2px solid transparent;
+    }
+    .nav a.item:hover { color: var(--fg); text-decoration: none; }
+    .nav a.item.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+    .wrap {
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 44px 24px 96px;
+    }
+
+    .cmd {
+      font-family: var(--mono);
+      font-size: 12.5px;
+      color: var(--faint);
+      margin: 0 0 14px;
+    }
+    .cmd .p { color: var(--green); font-weight: 700; }
+
+    .page-head {
+      padding-bottom: 16px;
+      margin-bottom: 8px;
+      border-bottom: 2px solid var(--fg);
+    }
+    .page-head h1 { font-size: 26px; font-weight: 700; letter-spacing: -0.01em; margin: 0 0 4px; }
+    .page-head p { margin: 0; color: var(--muted); font-size: 14px; max-width: 64ch; }
+
+    .post {
+      display: block;
+      padding: 22px 0;
+      border-bottom: 1px solid var(--line);
+      color: inherit;
+    }
+    .post:hover { text-decoration: none; }
+    .post .date {
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--amber);
+    }
+    .post h2 {
+      margin: 4px 0 6px;
+      font-size: 19px;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      color: var(--fg);
+      transition: color .15s ease;
+    }
+    .post:hover h2 { color: var(--accent); }
+    .post .desc {
+      margin: 0 0 10px;
+      color: var(--muted);
+      font-size: 14px;
+      max-width: 70ch;
+    }
+    .post .tags { display: flex; flex-wrap: wrap; gap: 6px; }
+    .post .tags span {
+      padding: 2px 9px;
+      font-size: 11px;
+      font-family: var(--mono);
+      color: var(--accent);
+      background: var(--accent-bg);
+      border-radius: 20px;
+    }
+    .post .read {
+      font-family: var(--mono);
+      font-size: 11.5px;
+      color: var(--faint);
+      margin-left: auto;
+    }
+    .post .foot-row { display: flex; align-items: center; margin-top: 10px; }
+
+    .empty {
+      padding: 22px 0;
+      color: var(--faint);
+      font-family: var(--mono);
+      font-size: 12.5px;
+    }
+
+    .prompt-end {
+      margin-top: 48px;
+      color: var(--faint);
+      font-family: var(--mono);
+      font-size: 12px;
+    }
+
+    @media (max-width: 720px) {
+      .wrap { padding: 30px 16px 64px; }
+    }
+  </style>
+</head>
+
+<body>
+
+  <nav class="nav">
+    <div class="inner">
+      <a class="brand" href="../index.html">hongguang-li<span style="color:var(--faint)"> ~</span></a>
+      <a class="item" href="../index.html">Home</a>
+      <a class="item active" href="index.html">Blog</a>
+    </div>
+  </nav>
+
+<div class="wrap">
+
+  <div class="page-head">
+    <h1>Blog</h1>
+  </div>
+
+  <a class="post" href="agent-observation-is-the-second-half.html">
+    <span class="date">2026-08-08</span>
+    <h2>Agent Observation Is the Second Half</h2>
+    <p class="desc">Building agents is becoming a solved problem; understanding what they actually do is not. Why trajectory data is the raw material of the next phase of agentic AI — and a technical deep dive into NVIDIA NeMo Relay: scopes, middleware, ATOF/ATIF/OTel/OpenInference, the transparent CLI wrapper, and sub-second trace availability.</p>
+    <div class="foot-row">
+      <div class="tags"><span>Agentic AI</span><span>Observability</span><span>NeMo Relay</span></div>
+      <span class="read">~12 min</span>
+    </div>
+  </a>
+
+  <p class="empty"># more posts loading…</p>
+
+  <p class="prompt-end"># last updated: 2026-08</p>
+
+</div>
+
+</body>
+</html>

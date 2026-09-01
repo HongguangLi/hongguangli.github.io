@@ -1,0 +1,521 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Agent Observation Is the Second Half · hongguang-li ~ blog</title>
+  <meta name="description" content="Agent building is becoming a solved problem. The next phase of agentic AI is observation — seeing, evaluating, and accelerating agent runs. A deep dive into NVIDIA NeMo Relay: why it exists and how it works."/>
+  <meta property="og:title" content="Agent Observation Is the Second Half"/>
+  <meta property="og:description" content="Why the next phase of agentic AI is watching agents run — and a technical deep dive into NVIDIA NeMo Relay."/>
+  <meta property="og:type" content="article"/>
+  <meta property="og:url" content="https://hongguangli.github.io/blog/agent-observation-is-the-second-half.html"/>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,400;0,500;0,700;1,400&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --bg:        #fafafa;
+      --panel:     #ffffff;
+      --fg:        #18181b;
+      --muted:     #52525b;
+      --faint:     #a1a1aa;
+      --line:      #e4e4e7;
+      --accent:    #2563eb;
+      --accent-bg: #eff6ff;
+      --green:     #16a34a;
+      --amber:     #b45309;
+      --radius:    12px;
+      --mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+      --sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--fg);
+      font-family: var(--sans);
+      font-size: 15.5px;
+      line-height: 1.75;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; text-underline-offset: 3px; }
+    ::selection { background: var(--accent); color: #fff; }
+
+    /* ============ nav ============ */
+    .nav {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      background: rgba(250,250,250,0.92);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      border-bottom: 1px solid var(--line);
+    }
+    .nav .inner {
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 0 24px;
+      display: flex;
+      align-items: center;
+      gap: 2px;
+    }
+    .nav .brand {
+      font-family: var(--mono);
+      font-size: 13px;
+      color: var(--fg);
+      font-weight: 700;
+      padding: 14px 12px 14px 0;
+      margin-right: auto;
+    }
+    .nav .brand:hover { text-decoration: none; color: var(--accent); }
+    .nav a.item {
+      padding: 14px 12px;
+      color: var(--muted);
+      font-size: 13px;
+      white-space: nowrap;
+      border-bottom: 2px solid transparent;
+    }
+    .nav a.item:hover { color: var(--fg); text-decoration: none; }
+    .nav a.item.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+    .wrap {
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 44px 24px 96px;
+    }
+
+    /* ============ post header ============ */
+    .cmd {
+      font-family: var(--mono);
+      font-size: 12.5px;
+      color: var(--faint);
+      margin: 0 0 18px;
+      word-break: break-all;
+    }
+    .cmd .p { color: var(--green); font-weight: 700; }
+
+    h1.title {
+      font-size: 32px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      line-height: 1.25;
+      margin: 0 0 6px;
+    }
+    .subtitle {
+      color: var(--muted);
+      font-size: 16.5px;
+      margin: 0 0 18px;
+      max-width: 62ch;
+    }
+    .meta {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--muted);
+      padding-bottom: 22px;
+      margin-bottom: 34px;
+      border-bottom: 2px solid var(--fg);
+    }
+    .meta .dot { color: var(--faint); }
+    .meta .tags { display: flex; flex-wrap: wrap; gap: 6px; }
+    .meta .tags span {
+      padding: 2px 9px;
+      font-size: 11px;
+      color: var(--accent);
+      background: var(--accent-bg);
+      border-radius: 20px;
+    }
+
+    /* ============ article ============ */
+    article p { margin: 0 0 18px; max-width: 72ch; }
+    article b, article strong { font-weight: 600; }
+
+    .sec-head {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin: 40px 0 16px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--line);
+    }
+    .sec-head .no {
+      font-family: var(--mono);
+      font-size: 12.5px;
+      color: var(--accent);
+      background: var(--accent-bg);
+      border-radius: 6px;
+      padding: 2px 8px;
+      white-space: nowrap;
+    }
+    .sec-head h2 { font-size: 20px; font-weight: 700; margin: 0; letter-spacing: -0.01em; }
+
+    h3 { font-size: 16px; font-weight: 700; margin: 26px 0 10px; }
+
+    article ul { margin: 0 0 18px; padding-left: 22px; max-width: 70ch; }
+    article ul li { margin-bottom: 8px; }
+    article ul li::marker { color: var(--accent); }
+
+    code {
+      font-family: var(--mono);
+      font-size: 0.86em;
+      background: #f1f1f3;
+      border: 1px solid var(--line);
+      border-radius: 5px;
+      padding: 1px 5px;
+      white-space: nowrap;
+    }
+
+    pre {
+      background: #18181b;
+      color: #e4e4e7;
+      border-radius: 10px;
+      border: 1px solid #27272a;
+      padding: 16px 18px;
+      overflow-x: auto;
+      font-family: var(--mono);
+      font-size: 12.8px;
+      line-height: 1.7;
+      margin: 0 0 20px;
+    }
+    pre code {
+      background: none; border: none; padding: 0; white-space: pre; font-size: inherit;
+    }
+    pre .c  { color: #71717a; }           /* comment */
+    pre .p  { color: #4ade80; font-weight: 700; } /* prompt $ */
+    pre .k  { color: #93c5fd; }           /* keyword */
+    pre .s  { color: #fcd34d; }           /* string */
+    pre .f  { color: #c4b5fd; }           /* function */
+
+    .callout {
+      border: 1px solid var(--line);
+      border-left: 3px solid var(--accent);
+      background: var(--panel);
+      border-radius: 0 10px 10px 0;
+      padding: 14px 18px;
+      margin: 0 0 20px;
+      color: var(--muted);
+      font-size: 14px;
+      max-width: 72ch;
+    }
+    .callout b { color: var(--fg); }
+
+    /* flow diagram */
+    .flow {
+      margin: 4px 0 22px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--panel);
+      padding: 18px;
+    }
+    .flow .stage {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 10px 14px;
+      background: var(--bg);
+    }
+    .flow .stage .lbl {
+      font-family: var(--mono);
+      font-size: 10.5px;
+      font-weight: 700;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 4px;
+    }
+    .flow .stage.rly { border-color: #86efac; background: #f0fdf4; }
+    .flow .stage.rly .lbl { color: var(--green); }
+    .flow .stage .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+    .flow .chip {
+      padding: 2px 9px;
+      font-size: 11.5px;
+      font-family: var(--mono);
+      color: var(--fg);
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      white-space: nowrap;
+    }
+    .flow .arr {
+      text-align: center;
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--faint);
+      padding: 6px 0;
+    }
+    .flow .loop {
+      margin-top: 10px;
+      border-top: 1px dashed var(--line);
+      padding-top: 10px;
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--amber);
+      text-align: center;
+    }
+
+    /* tables */
+    .tbl-wrap { overflow-x: auto; margin: 0 0 20px; border: 1px solid var(--line); border-radius: 10px; background: var(--panel); }
+    table { border-collapse: collapse; width: 100%; font-size: 13.5px; }
+    th {
+      font-family: var(--mono);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      text-align: left;
+      color: var(--muted);
+      background: var(--bg);
+      padding: 10px 14px;
+      border-bottom: 2px solid var(--fg);
+      white-space: nowrap;
+    }
+    td { padding: 10px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+    tr:last-child td { border-bottom: none; }
+    td.mono, .mono { font-family: var(--mono); font-size: 12.5px; }
+    td .fmt { font-weight: 700; color: var(--fg); white-space: nowrap; }
+    td.num { font-family: var(--mono); font-size: 12.5px; white-space: nowrap; }
+    td.good { color: var(--green); font-weight: 700; }
+
+    .foot-note {
+      font-size: 12.5px;
+      color: var(--faint);
+      border-top: 1px solid var(--line);
+      margin-top: 40px;
+      padding-top: 16px;
+      max-width: 72ch;
+    }
+    .prompt-end {
+      margin-top: 34px;
+      color: var(--faint);
+      font-family: var(--mono);
+      font-size: 12px;
+    }
+
+    @media (max-width: 720px) {
+      .wrap { padding: 30px 16px 64px; }
+      h1.title { font-size: 25px; }
+    }
+  </style>
+</head>
+
+<body>
+
+  <nav class="nav">
+    <div class="inner">
+      <a class="brand" href="../index.html">hongguang-li<span style="color:var(--faint)"> ~</span></a>
+      <a class="item" href="../index.html">Home</a>
+      <a class="item active" href="index.html">Blog</a>
+    </div>
+  </nav>
+
+<div class="wrap">
+
+  <p class="cmd"><span class="p">$</span> cat posts/2026-08-agent-observation-is-the-second-half.md</p>
+
+  <h1 class="title">Agent Observation Is the Second Half</h1>
+  <p class="subtitle">Building agents is getting easier every month. Understanding what they actually do is not. A deep dive into why agent observation is the next battleground — and how NVIDIA NeMo Relay approaches it.</p>
+
+  <div class="meta">
+    <span>2026-08-08</span><span class="dot">·</span>
+    <span>Harvey Li</span><span class="dot">·</span>
+    <span>~12 min read</span><span class="dot">·</span>
+    <div class="tags"><span>Agentic AI</span><span>Observability</span><span>NeMo Relay</span></div>
+  </div>
+
+  <article>
+
+    <p>For the past two years, the agentic AI race has been a race to <b>build</b>. Claude Code, Codex, Cursor, Hermes Agent, OpenClaw, OpenCode — long-running agent harnesses have become astonishingly capable. They connect LLMs to tools, files, messaging apps, and the broader internet. They run 24/7, get triggered by events, execute on schedules. They browse the web, manage calendars, spawn sub-agents, and chain complex multi-step tasks entirely on their own.</p>
+
+    <p>That first half — <i>agent build</i> — is rapidly becoming a solved problem. Pick a harness, plug in a frontier model, add skills and MCP servers, and you have a working agent in an afternoon. The marginal cost of standing up a capable agent is collapsing toward zero.</p>
+
+    <p>Which is exactly why it's no longer where the game will be decided.</p>
+
+    <div class="sec-head"><span class="no">01</span><h2>The loop you can't see into</h2></div>
+
+    <p>Here is the uncomfortable truth about every agent in production today: <b>it runs inside a loop you can't easily see into.</b></p>
+
+    <p>Ask the operator of a long-running agent some basic questions:</p>
+
+    <ul>
+      <li>Which tools did the agent actually use for this task?</li>
+      <li>How many tokens did it burn, and on which step?</li>
+      <li>How long did each tool call take? Where is the bottleneck in the loop?</li>
+      <li>Which skills did it load? Which sub-agents did it spawn, and what did <i>they</i> do?</li>
+      <li>What did it read from memory? And how do I lower the API bill?</li>
+    </ul>
+
+    <p>Most teams cannot answer these questions today. There is no visibility into the agent's execution lifecycle. And that has hard consequences: <b>you cannot debug failures without telemetry, and you cannot optimize or accelerate what you cannot observe.</b></p>
+
+    <p>We have seen this movie before. In the web and mobile era, the first half was shipping apps; the second half — the part that decided winners — was analytics, APM, and observability. Datadog was built on that second half. Agents are at the same inflection point now, with one difference: an agent's "request" is not a stateless HTTP call. It is a sprawling, branching trajectory of LLM calls, tool invocations, skill loads, memory accesses, and recursive sub-agents. The old observability toolbox doesn't natively speak that language.</p>
+
+    <div class="sec-head"><span class="no">02</span><h2>Trajectory data is the new raw material</h2></div>
+
+    <p>The unit of value in the second half is the <b>agent trajectory</b>: the complete, structured record of everything an agent did during a run, with parent-child lineage intact.</p>
+
+    <p>Trajectory data is not just for pretty dashboards. It is the single upstream input for essentially everything you want to do with an agent after it ships:</p>
+
+    <ul>
+      <li><b>Observability &amp; debugging</b> — understanding runtime behaviour and failure modes.</li>
+      <li><b>Evaluation</b> — replaying and scoring real runs instead of synthetic benchmarks.</li>
+      <li><b>Optimization (offline)</b> — finding bottlenecks, wasted tokens, and redundant calls in the loop.</li>
+      <li><b>Acceleration (online)</b> — caching, routing, and hinting based on what previous runs revealed.</li>
+      <li><b>Training</b> — trajectories are exactly the shape of data that agentic RL and distillation pipelines want.</li>
+    </ul>
+
+    <p>The problem: every harness records its own idea of a trace, in its own format, through its own hooks — when it records anything at all. Claude Code, Codex, Cursor, and Hermes each need the same thing: <b>one shared layer for capturing sessions, model calls, tool calls, errors, and replay — and exporting the telemetry in standard formats.</b> That layer didn't exist. This is the gap NeMo Relay was built to fill.</p>
+
+    <div class="sec-head"><span class="no">03</span><h2>What NeMo Relay is</h2></div>
+
+    <p><a href="https://github.com/NVIDIA/NeMo-Relay" target="_blank" rel="noopener">NVIDIA NeMo Relay</a> is a Rust-based agent runtime layer that runs alongside your agent harness, sees the traffic that matters — LLM calls and tool calls — and gives you visibility and control over agent runs <b>without requiring changes to the existing agent stack</b>.</p>
+
+    <p>The positioning is deliberate. Relay does not replace your framework, your model provider, your observability backend, or your guardrail system. A production agent stack today might combine LangGraph, provider SDKs, custom harness code, NeMo Guardrails, a tracing backend, and an eval pipeline — and every one of those layers invents its own wrappers and its own trace vocabulary. Relay gives them <b>one runtime contract</b>: a common boundary where they all meet.</p>
+
+    <div class="flow">
+      <div class="stage">
+        <div class="lbl">Agent Execution</div>
+        <div class="chips"><span class="chip">Claude Code</span><span class="chip">Codex</span><span class="chip">Cursor</span><span class="chip">Hermes</span><span class="chip">LangGraph</span><span class="chip">sub-agents</span><span class="chip">tools</span><span class="chip">skills</span><span class="chip">memory</span></div>
+      </div>
+      <div class="arr">│ capture &amp; intercept at call boundaries ▼</div>
+      <div class="stage rly">
+        <div class="lbl">NeMo Relay Runtime</div>
+        <div class="chips"><span class="chip">scopes</span><span class="chip">managed LLM / tool calls</span><span class="chip">middleware</span><span class="chip">plugins</span><span class="chip">lifecycle events</span></div>
+      </div>
+      <div class="arr">│ one canonical event stream ▼</div>
+      <div class="stage">
+        <div class="lbl">Open Formats</div>
+        <div class="chips"><span class="chip">ATOF</span><span class="chip">ATIF</span><span class="chip">OpenTelemetry</span><span class="chip">OpenInference</span></div>
+      </div>
+      <div class="arr">│ observe · evaluate ▼</div>
+      <div class="stage">
+        <div class="lbl">Backends &amp; Pipelines</div>
+        <div class="chips"><span class="chip">Langfuse</span><span class="chip">Phoenix</span><span class="chip">any OTLP collector</span><span class="chip">eval / replay</span><span class="chip">RL data</span></div>
+      </div>
+      <div class="loop">↩ feedback loop: optimize &amp; accelerate the harness (hints · cache · routing)</div>
+    </div>
+
+    <div class="sec-head"><span class="no">04</span><h2>How it works: the runtime contract</h2></div>
+
+    <p>Under the hood, Relay is built from a small set of primitives. Rust is the source of truth for runtime behaviour; the Python and Node.js bindings mirror the same semantics.</p>
+
+    <h3>Scopes — execution context with lineage</h3>
+    <p>Everything in a run lives inside a hierarchy of <b>scopes</b>: runs, turns, tool calls, LLM calls, and sub-agents each get clear ownership, parent-child lineage, cleanup boundaries, and request isolation. This is what makes recursive sub-agent trees — the thing classic tracing struggles with — first-class citizens.</p>
+
+    <h3>Managed LLM and tool calls</h3>
+    <p>Call boundaries route through consistent lifecycle helpers, so the same lifecycle and middleware rules apply around every callback, no matter which framework or provider owns the actual execution. Scheduling, retries, memory, and result handling stay in the owning application.</p>
+
+    <h3>Middleware — where policy meets execution</h3>
+    <p>Middleware is the interception point where Relay can <b>block, sanitize, transform, route, retry, or replace</b> execution. Guardrails live here (pre-tool blocking), and so do payload sanitizers and routing logic. Observation and control share one mechanism.</p>
+
+    <h3>Plugins, events, and subscribers</h3>
+    <p>Reusable behavior — observability exporters, guardrails, adaptive optimization, PII redaction — ships as <b>plugins</b> enabled from configuration, not code changes. Everything emits into one canonical lifecycle event stream, and every output format is derived from that same stream by subscribers and exporters.</p>
+
+    <div class="sec-head"><span class="no">05</span><h2>One stream, four output formats</h2></div>
+
+    <p>Relay's answer to "which trace format?" is: capture once, project into whatever your downstream tools speak.</p>
+
+    <div class="tbl-wrap">
+      <table>
+        <tr><th>Format</th><th>Shape</th><th>Best for</th></tr>
+        <tr>
+          <td><span class="fmt">ATOF</span><br/><span style="color:var(--muted);font-size:12px">Agent Trajectory Observability Format</span></td>
+          <td>One JSON object per lifecycle event, one line at a time — tools, LLM calls, middleware, marks</td>
+          <td>The canonical <b>source of truth</b>; debugging what Relay actually captured</td>
+        </tr>
+        <tr>
+          <td><span class="fmt">ATIF</span><br/><span style="color:var(--muted);font-size:12px">Agent Trajectory Interchange Format</span></td>
+          <td>One trajectory JSON artifact per top-level run: user/agent steps, tool calls, observations, metrics, nested sub-agent trajectories</td>
+          <td>Offline analysis, replay, evaluation, lineage</td>
+        </tr>
+        <tr>
+          <td><span class="fmt">OpenTelemetry</span></td>
+          <td>Distributed trace spans sent to an OTLP collector</td>
+          <td>Generic tracing backends; service-wide observability</td>
+        </tr>
+        <tr>
+          <td><span class="fmt">OpenInference</span></td>
+          <td>OTLP spans with model-centric semantic attributes: inputs/outputs, token usage, messages, tool schemas</td>
+          <td>AI/LLM observability tools like Phoenix</td>
+        </tr>
+      </table>
+    </div>
+
+    <p>The design point worth internalizing: <b>raw ATOF events are the ground truth, and everything else is a projection.</b> When a downstream trace looks wrong, you can always diff it against the raw event stream instead of guessing what the exporter did.</p>
+
+    <div class="sec-head"><span class="no">06</span><h2>Three ways in</h2></div>
+
+    <h3>1 · The CLI: observe an agent you didn't write</h3>
+    <p>The fastest path. The Relay CLI is a <b>transparent wrapper</b>: it starts a local Relay gateway, injects host-specific hook and provider settings for the launched process, and shuts the gateway down when the agent exits. No changes to the agent, no code — wrap the coding agent you already use, and the raw canonical events plus the normalized trajectory land on disk.</p>
+
+    <p>Claude Code, Codex, and Hermes are supported today for observability, with hook-backed security (pre-tool blocking) where the host exposes blocking hooks.</p>
+
+    <h3>2 · The SDK: instrument code you own</h3>
+    <p>If you're writing the application that calls models and tools, route those boundaries through Relay directly, in Python, Node.js, or Rust — open a scope around your agent, emit events at the LLM and tool boundaries, and register subscribers to consume the stream.</p>
+
+    <h3>3 · Prebuilt integrations: frameworks</h3>
+    <p>For LangChain, LangGraph, and Deep Agents, Relay ships integrations that wrap tool and LLM calling with full observability, security, and optimization support. OpenClaw is covered through hook-backed telemetry with pre-tool guardrails.</p>
+
+    <div class="sec-head"><span class="no">07</span><h2>Doesn't observation slow you down?</h2></div>
+
+    <p>A fair objection: agents are already slow, and now you want another layer in the path. The relevant question is not just overhead — it's <b>how quickly a finished run becomes usable telemetry</b>. Agent completion does not guarantee trace availability. We measured two things:</p>
+
+    <ul>
+      <li><b>Visible latency</b> — time until a run's trace can first be queried in the backend.</li>
+      <li><b>Complete latency</b> — time until the expected observation count has fully arrived.</li>
+    </ul>
+
+    <p>In a benchmark we ran in July 2026 — same agent, same model, same Langfuse backend, 4 benchmarks × 20 tasks, in serial and 20-way concurrent regimes — we compared two telemetry paths into that shared backend: a transcript-hook path (after each response: transcript delta → rebuild → flush OTel spans) versus the Relay path (capture LLM and tool boundaries <i>during execution</i>, export spans on close):</p>
+
+    <div class="tbl-wrap">
+      <table>
+        <tr><th>Telemetry path</th><th>Visible (serial)</th><th>Complete (serial)</th><th>Visible (20-way)</th><th>Complete (20-way)</th></tr>
+        <tr><td>Transcript hook</td><td class="num">6.072 s</td><td class="num">9.493 s</td><td class="num">6.982 s</td><td class="num">10.876 s</td></tr>
+        <tr><td><b>NeMo Relay</b></td><td class="num good">0.417 s</td><td class="num good">0.491 s</td><td class="num good">0.629 s</td><td class="num good">0.738 s</td></tr>
+      </table>
+    </div>
+
+    <p>Every reported Relay mean stayed under 0.9 seconds, across all eight benchmark/regime combinations. The gap is architectural rather than a tuning artifact: a hook that reconstructs transcripts after each response batches work at the end of the pipeline, while a runtime that captures events at the call boundary has essentially already done the work when the run closes. Sub-second trace availability is what makes observation usable <i>inside</i> operational loops — watch-dogs, live evals, budget guards — rather than as after-the-fact archaeology.</p>
+
+    <div class="callout"><b>Honest caveats:</b> this is a path-level comparison — collection timing and exporter policy differ between the two paths — from one aggregate round, without task-level distributions or confidence intervals. It doesn't measure semantic parity or resource cost, and it doesn't establish that any product is intrinsically superior. Treat it as evidence about telemetry architecture, not a leaderboard.</div>
+
+    <div class="sec-head"><span class="no">08</span><h2>Telemetry is just the start</h2></div>
+
+    <p>If Relay stopped at trace collection it would still be useful, but the more interesting part is that observation and control share the same substrate. Because Relay sits at the call boundary, it can act, not just record:</p>
+
+    <ul>
+      <li><b>Adaptive optimization</b> — the <code>nemo-relay-adaptive</code> crate lets the runtime learn from observed executions, inject runtime hints, persist adaptive state, and cache repeated LLM responses.</li>
+      <li><b>Routing</b> — integration with NeMo Switchyard's Decision API adds routing-aware LLM execution intercepts, while Relay keeps ownership of credentials, dispatch, retries, and fallbacks.</li>
+      <li><b>Privacy</b> — a first-party <code>pii-redaction</code> plugin applies deterministic, config-driven redaction to tool and LLM observability payloads, instead of every team hand-writing sanitize middleware.</li>
+      <li><b>Guardrails</b> — middleware hooks give guardrail systems a real enforcement point: block a tool call before it runs, not flag it afterwards.</li>
+    </ul>
+
+    <p>That's the full second-half flywheel on one substrate: <b>observe → evaluate → optimize → accelerate</b> — collecting trajectory data not as an archive but as the fuel for making agent harnesses faster and cheaper, run after run.</p>
+
+    <div class="sec-head"><span class="no">09</span><h2>The second half is a data game</h2></div>
+
+    <p>In the first half, the moat was the harness. In the second half, the harness is table stakes — the moat is what you learn from every run. Teams that treat agent runs as ephemeral executions will keep debugging by vibes and paying API bills they can't explain. Teams that capture standardized trajectories turn every run into a compounding asset: eval sets from production, caches that hit, routers that learn, RL data that's already in the right shape.</p>
+
+    <p>Agent build was the first half. Agent observation is the second half — and it has already started.</p>
+
+    <p style="margin-top:26px">
+      <a href="https://github.com/NVIDIA/NeMo-Relay" target="_blank" rel="noopener">github.com/NVIDIA/NeMo-Relay</a> ·
+      <a href="https://docs.nvidia.com/nemo/relay" target="_blank" rel="noopener">docs.nvidia.com/nemo/relay</a>
+    </p>
+
+    <p class="foot-note">Latency numbers are from internal comparison runs (July 2026) by Yuxiao Yi, Jinsong Zhou, and Harvey Li, measuring two telemetry paths into one shared Langfuse backend. NeMo Relay is open source under Apache-2.0.</p>
+
+  </article>
+
+  <p class="prompt-end"># EOF · <a href="index.html">back to blog index</a></p>
+
+</div>
+
+</body>
+</html>
